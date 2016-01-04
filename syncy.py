@@ -33,6 +33,14 @@ import pycurl
 import binascii
 # import zlib
 # import fileinput
+
+PROXIES_TYPES_MAP = {
+    'socks5': pycurl.PROXYTYPE_SOCKS5,
+    'socks4': pycurl.PROXYTYPE_SOCKS4,
+    'http': pycurl.PROXYTYPE_HTTP,
+    'https': pycurl.PROXYTYPE_HTTP
+    }
+
 try:    # require python-crypto
     from Crypto.Cipher import ARC4
     from Crypto.Cipher import Blowfish
@@ -139,7 +147,12 @@ class SyncY:
         'syncperiod'	: '0-24',
         'syncinterval'	: 3600,
         'tasknumber'	: 2,
-        'threadnumber'	: 2}
+        'threadnumber'	: 2,
+        'proxy_on'      : 'off',
+        'proxy_ip'      : '',
+        'proxy_port'    : '',
+        'proxy_type'    : '',
+        }
     syre = {
         'newname': re.compile(r'^(.*)(\.[^.]+)$'),
         'pcspath': re.compile(r'^[\s\.\n].*|.*[/<>\\|\*\?:\"].*|.*[\s\.\n]$')}
@@ -281,6 +294,8 @@ class SyncY:
             sys.stdout = sys.stderr
 
         try:
+            if SyncY.config['proxy_on'] != 'on' and SyncY.config['proxy_on'] != 'off':
+                SyncY.config['proxy_on'] = 'off'
             if SyncY.config['blocksize'] < 1:
                 SyncY.config['blocksize'] = 10
                 print('%s WARNING: "blocksize" must great than or equal to 1(M), set to default 10(M).' % (time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())))
@@ -1677,6 +1692,11 @@ class SYCurl:
                 curl.setopt(pycurl.HEADER, 0)
                 curl.setopt(pycurl.NOSIGNAL, 1)
                 curl.setopt(pycurl.WRITEFUNCTION, self.__write_data)
+                if SyncY.config['proxy_on'] == 'on':
+                    curl.setopt(pycurl.PROXY, SyncY.config['proxy_ip'])
+                    curl.setopt(pycurl.PROXYPORT, int(SyncY.config['proxy_port']))
+                    curl.setopt(pycurl.PROXYTYPE, PROXIES_TYPES_MAP[SyncY.config['proxy_type']])
+
 
                 starthour, endhour = SyncY.config['speedlimitperiod'].split('-', 1)
                 starthour = int(starthour)
